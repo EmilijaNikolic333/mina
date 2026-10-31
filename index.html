@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Mina: Team Quest</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#1b1430;--bg2:#2a1f4a;--ink:#fff7e8;--pink:#ff5c8a;--pinkD:#b8325b;
+  --yellow:#ffd23f;--mint:#3ee6b0;--orange:#ff8a3d;--paper:#fff7e8;--paperInk:#1b1430;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg);color:var(--ink);font-family:'VT323',monospace;font-size:22px;line-height:1.15;
+  overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 20px 30px,#fff8,transparent),
+    radial-gradient(1.5px 1.5px at 120px 90px,#fff6,transparent),
+    radial-gradient(1.5px 1.5px at 200px 20px,#fff9,transparent),
+    radial-gradient(1.5px 1.5px at 70px 160px,#fff5,transparent),
+    radial-gradient(1.5px 1.5px at 250px 140px,#fff7,transparent);
+  background-size:280px 180px;
+}
+#app{position:relative;max-width:480px;height:100%;margin:0 auto;padding:16px;overflow-y:auto;overflow-x:hidden}
+.screen{display:none;min-height:100%;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center}
+.screen.on{display:flex;animation:pop .35s ease-out}
+@keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+h1,h2,h3,.px{font-family:'Press Start 2P',monospace;font-weight:400}
+h1{font-size:44px;color:var(--yellow);text-shadow:4px 4px 0 var(--pink),8px 8px 0 #000;letter-spacing:2px}
+h2{font-size:18px;line-height:1.5;color:var(--yellow);text-shadow:3px 3px 0 #000}
+h3{font-size:12px;line-height:1.6}
+.sub{font-family:'Press Start 2P';font-size:13px;color:var(--mint);letter-spacing:2px}
+.pixel{image-rendering:pixelated;image-rendering:crisp-edges}
+.btn{
+  font-family:'Press Start 2P';font-size:13px;background:var(--pink);color:#fff;border:3px solid #000;
+  padding:14px 18px;box-shadow:0 5px 0 var(--pinkD),0 5px 0 3px #000;cursor:pointer;margin-top:6px;
+}
+.btn:active{transform:translateY(5px);box-shadow:none}
+.btn.alt{background:var(--mint);color:var(--paperInk);box-shadow:0 5px 0 #1f9a74,0 5px 0 3px #000}
+.blink{animation:blink 1.1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.bob{animation:bob 1.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-8px)}}
+.small{font-size:18px;opacity:.75}
+#mute{position:fixed;top:10px;right:10px;z-index:20;font-size:18px;background:#0006;border:2px solid #fff4;color:#fff;width:40px;height:40px;cursor:pointer}
+
+/* title */
+.teamrow{display:flex;flex-wrap:wrap;justify-content:center;gap:2px 4px;align-items:flex-end}
+.teamrow img{height:40px}
+.teamrow figure{display:flex;flex-direction:column;align-items:center;gap:2px}
+.teamrow figcaption{font-size:15px;opacity:.85}
+
+/* character card */
+.card-p{background:var(--bg2);border:3px solid #000;box-shadow:0 0 0 3px var(--yellow),6px 6px 0 3px #000;padding:16px;width:100%;max-width:360px;text-align:left}
+.card-p .top{display:flex;gap:14px;align-items:center}
+.stat{margin-top:8px}
+.stat b{display:flex;justify-content:space-between;font-weight:400}
+.bar{height:12px;border:2px solid #000;background:#0005;margin-top:3px}
+.bar i{display:block;height:100%;background:var(--mint);width:0;transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+.bar.p i{background:var(--pink)}
+
+/* comic */
+.lvl-tag{font-family:'Press Start 2P';font-size:11px;background:var(--yellow);color:#000;padding:6px 10px;border:3px solid #000}
+.lvl-tag.boss{background:var(--pink);color:#fff}
+.panel{background:var(--paper);color:var(--paperInk);border:3px solid #000;box-shadow:5px 5px 0 #000;width:100%;max-width:380px;text-align:left;opacity:0;transform:translateY(10px) rotate(-.6deg);transition:.4s}
+.panel:nth-of-type(even){transform:translateY(10px) rotate(.6deg)}
+.panel.in{opacity:1;transform:rotate(-.6deg)}
+.panel:nth-of-type(even).in{transform:rotate(.6deg)}
+.panel .cap{background:var(--yellow);border-bottom:3px solid #000;padding:6px 10px;font-size:19px}
+.panel .scene{display:flex;align-items:flex-end;gap:10px;padding:12px 10px 10px;background:repeating-radial-gradient(circle at 0 0,#0000 0 6px,#00000008 6px 7px)}
+.panel .who{display:flex;gap:2px;align-items:flex-end;flex-shrink:0}
+.panel .who img{height:72px}
+.panel .who.many img{height:46px}
+.panel .who.many{flex-wrap:wrap;max-width:132px;justify-content:center}
+.bubble{position:relative;background:#fff;border:3px solid #000;border-radius:14px;padding:8px 10px;font-size:21px;flex:1;margin-bottom:24px}
+.bubble::before{content:"";position:absolute;left:-12px;bottom:6px;border:8px solid transparent;border-right:12px solid #000;border-left:0}
+.goal{background:#0004;border:2px dashed var(--mint);padding:10px 12px;max-width:380px;font-size:20px;color:var(--mint)}
+
+/* game */
+.hud{display:flex;justify-content:space-between;width:100%;max-width:380px;font-family:'Press Start 2P';font-size:11px;align-items:center}
+.stage{position:relative;border:3px solid #000;box-shadow:0 0 0 3px var(--pink),6px 6px 0 3px #000;background:#000}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none;image-rendering:pixelated}
+.hint{font-size:20px;color:var(--mint);min-height:24px;max-width:380px}
+.overlay{position:absolute;inset:0;background:#1b1430e6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;text-align:center;animation:pop .3s}
+
+/* memory */
+.mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;width:min(100%,calc((100dvh - 210px)*.75),380px)}
+.mcard{aspect-ratio:3/4;perspective:500px;background:none;border:0;padding:0;cursor:pointer}
+.mcard .in{position:relative;width:100%;height:100%;transition:transform .35s;transform-style:preserve-3d}
+.mcard.up .in{transform:rotateY(180deg)}
+.mcard .f,.mcard .b{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:3px solid #000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.mcard .f{background:var(--pink);background-image:repeating-linear-gradient(45deg,#0000 0 6px,#ffffff22 6px 12px);font-family:'Press Start 2P';color:var(--yellow);font-size:18px;text-shadow:2px 2px 0 #000}
+.mcard .b{background:var(--paper);transform:rotateY(180deg);color:var(--paperInk)}
+.mcard .b img{height:62%}
+.mcard .b span{font-size:15px}
+.mcard.ok .b{background:var(--mint)}
+
+/* polaroid */
+.polaroid{background:#fff;padding:10px 10px 8px;box-shadow:5px 5px 0 #000;border:2px solid #000;color:#222;width:min(78vw,300px);transform:rotate(-2deg)}
+.polaroid img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#222;filter:brightness(2.4) blur(6px) grayscale(1);transition:filter 2.2s ease-out}
+.polaroid.dev img{filter:none}
+.polaroid p{font-size:19px;margin-top:6px;text-align:center}
+.gallery{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:380px;padding:6px}
+.gallery .polaroid{width:100%;padding:6px 6px 4px}
+.gallery .polaroid img{filter:none}
+.gallery .polaroid p{font-size:16px}
+.gallery .polaroid:nth-child(even){transform:rotate(2.5deg)}
+.stars{font-size:30px;color:var(--yellow);letter-spacing:6px;text-shadow:2px 2px 0 #000}
+
+/* final */
+#final{justify-content:flex-start;padding:30px 0 40px}
+.win{font-size:24px;line-height:1.5}
+.hearts{font-size:22px;color:var(--pink)}
+.msg{background:var(--paper);color:var(--paperInk);border:3px solid #000;box-shadow:5px 5px 0 #000;padding:14px;max-width:380px;font-size:21px;text-align:left}
+.msg .sig{margin-top:8px;text-align:right;color:var(--pinkD)}
+.credits{font-family:'Press Start 2P';font-size:10px;line-height:2.2;color:#fffb}
+.credits b{color:var(--yellow);font-weight:400}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:10}
+.floatheart{position:fixed;bottom:-30px;font-size:22px;pointer-events:none;z-index:9;animation:up linear forwards}
+@keyframes up{to{transform:translateY(-110vh) rotate(30deg);opacity:.2}}
+</style>
+</head>
+<body>
+<button id="mute" title="Zvuk">♪</button>
+<canvas id="fx"></canvas>
+<div id="app">
+
+  <!-- TITLE -->
+  <section class="screen on" id="title">
+    <div class="sub">IT SEKTOR PREDSTAVLJA</div>
+    <h1>MINA</h1>
+    <div class="sub" style="color:var(--yellow)">TEAM QUEST</div>
+    <img id="titleMina" class="pixel bob" alt="Mina" style="height:190px;margin:10px 0">
+    <div class="teamrow" id="titleTeam"></div>
+    <button class="btn blink" id="startBtn">PRITISNI START</button>
+    <div class="small">najbolje uz zvuk ♪</div>
+  </section>
+
+  <!-- PLAYER -->
+  <section class="screen" id="player">
+    <h2>IZABERI IGRAČA</h2>
+    <div class="card-p">
+      <div class="top">
+        <img id="pMina" class="pixel" alt="" style="height:140px">
+        <div>
+          <h3 style="color:var(--yellow)">IGRAČ 1</h3>
+          <h2 style="font-size:20px;margin:4px 0">MINA</h2>
+          <div>Klasa: <b style="color:var(--mint);font-weight:400">Predsednica IT sektora</b></div>
+          <div>Moć: prezentacije koje su igrice 🎮</div>
+        </div>
+      </div>
+      <div class="stat"><b><span>Organizacija</span><span>99</span></b><div class="bar"><i data-w="99"></i></div></div>
+      <div class="stat"><b><span>Kreativnost</span><span>100</span></b><div class="bar"><i data-w="100"></i></div></div>
+      <div class="stat"><b><span>Druženje</span><span>MAX</span></b><div class="bar p"><i data-w="100"></i></div></div>
+      <div class="stat"><b><span>Strpljenje sa nama</span><span>∞</span></b><div class="bar p"><i data-w="100"></i></div></div>
+    </div>
+    <div class="small">Tim: 8 članova se pridružilo ekipi</div>
+    <div class="teamrow" id="playerTeam"></div>
+    <button class="btn" id="pickBtn">IGRAČ IZABRAN ▶</button>
+  </section>
+
+  <!-- STORY -->
+  <section class="screen" id="story"></section>
+
+  <!-- LEVEL 1: CAFE -->
+  <section class="screen" id="g1">
+    <div class="hud"><span>NIVO 1 · KAFIĆ</span><span id="g1score"></span></div>
+    <div class="stage" id="st1"><canvas id="cv1"></canvas></div>
+    <div class="hint">Vuci prstom levo-desno · uhvati pića · izbegavaj 🧾</div>
+  </section>
+
+  <!-- LEVEL 2: MEMORY -->
+  <section class="screen" id="g2">
+    <div class="hud"><span>NIVO 2 · DRUŠTVENE IGRE</span><span id="g2score"></span></div>
+    <div class="mgrid" id="mgrid"></div>
+    <div class="hint">Upari sve članove tima!</div>
+  </section>
+
+  <!-- LEVEL 3: BOWLING -->
+  <section class="screen" id="g3">
+    <div class="hud"><span>NIVO 3 · BOSS</span><span id="g3score"></span></div>
+    <div class="stage" id="st3"><canvas id="cv3"></canvas></div>
+    <div class="hint" id="g3hint"></div>
+  </section>
+
+  <!-- CLEAR -->
+  <section class="screen" id="clear"></section>
+
+  <!-- FINAL -->
+  <section class="screen" id="final">
+    <div class="stars">★ ★ ★</div>
+    <h2 class="win">ČESTITAMO,<br>MINA!</h2>
+    <div class="sub" style="color:var(--yellow)">PREŠLA SI IGRICU</div>
+    <img id="fMina" class="pixel bob" alt="Mina" style="height:170px">
+    <div class="teamrow" id="finalTeam"></div>
+    <h2 style="color:var(--pink);font-size:15px">USPEŠNO SI UKRALA<br>NAŠA SRCA ❤️</h2>
+    <div class="msg">
+      Hvala ti za svaki sastanak, svaki savet i sve divne uspomene.
+      Bila si najbolja predsednica koju je IT sektor mogao da ima! 💙
+      <div class="sig">— tvoj tim</div>
+    </div>
+    <h3 style="color:var(--mint);margin-top:10px">GALERIJA USPOMENA</h3>
+    <div class="gallery" id="gallery"></div>
+    <div class="credits" id="credits"></div>
+    <button class="btn alt" id="againBtn">IGRAJ PONOVO ↺</button>
+  </section>
+</div>
+
+<script>
+/* ---------- sound ---------- */
+let AC = null, muted = false;
+function beep(f = 440, d = .08, type = 'square', v = .045) {
+  if (muted) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.value = f; g.gain.value = v;
+    o.connect(g); g.connect(AC.destination); o.start();
+    g.gain.exponentialRampToValueAtTime(.0001, AC.currentTime + d);
+    o.stop(AC.currentTime + d + .02);
+  } catch (e) {}
+}
+const jingle = (notes, step = 110) => notes.forEach((n, i) => setTimeout(() => beep(n, .14), i * step));
+const FANFARE = [523, 659, 784, 1047, 784, 1047];
+document.getElementById('mute').onclick = e => { muted = !muted; e.target.textContent = muted ? '✕' : '♪'; };
+
+/* ---------- pixel avatars (24x36, built from layers) ---------- */
+const TEAM = [
+  {id:'mina', name:'Mina', style:'side', wavy:1, len:27, hair:['#c4502a','#8a3216','#ec8a55'],
+   jacket:['#8d8d96','#6c6c76'], top:['#1c1a22','#2b2833'], vneck:1, earrings:1, skin:['#f8dccb','#e8b9a0']},
+  {id:'luka', name:'Luka', male:1, style:'short', hair:['#3a2a1e','#22170f','#56402e'],
+   top:['#9a9ca4','#7c7e86'], turtle:1, zip:1, beard:'#7a5a46', pants:'#2a3550', brows:1, skin:['#f0c8aa','#d9a585']},
+  {id:'pera', name:'Pera', male:1, style:'swept', hair:['#2e2019','#1a110c','#4a3428'],
+   top:['#22212a','#33313d'], crossed:1, mouth:'smirk', brows:1},
+  {id:'ema', name:'Ema', style:'middle', len:27, hair:['#7a5236','#523521','#a87a52'], ombre:'#b8875a',
+   top:['#f4f4f2','#d6d6d0'], vneck:1, collar:1},
+  {id:'andrijana', name:'Andrijana', style:'middle', len:21, hair:['#e2bf72','#b08a42','#f6e0a6'],
+   top:['#c9d23a','#a9b02a'], turtle:1, mouth:'soft'},
+  {id:'nata', name:'Nata', style:'sideR', wavy:1, len:26, hair:['#6b4430','#45291b','#946446'],
+   jacket:['#1e1d24','#121117'], top:['#f4f2ee','#d9d5cc'], turtle:1},
+  {id:'lara', name:'Lara', style:'tucked', len:24, mouth:'soft', hair:['#6b4a35','#45291b','#8e6748'],
+   jacket:['#1e1d24','#121117'], top:['#4a3a32','#3a2d27'], vneck:1, necklace:1, watch:1},
+  {id:'ana', name:'Ana', style:'middle', wavy:1, volume:1, len:25, hair:['#2f1c12','#1a0e08','#55361f'],
+   jacket:['#a7a68e','#85846d'], top:['#1c1a22','#2b2833'], crossed:1, mouth:'grin', skin:['#efc4a3','#d9a282']},
+  {id:'tea', name:'Tea', style:'bob', len:17, hair:['#4a2c1c','#2e190f','#6e4630'],
+   top:['#1c1a22','#2b2833'], necklace:1, earrings:1, crossed:1, mouth:'soft', brows:1},
+];
+const P = id => TEAM.find(p => p.id === id);
+
+const SW = 24, SH = 36;
+const FACE_W = {5:6, 6:6, 7:6, 8:6, 9:6, 10:6, 11:6, 12:5, 13:5, 14:4, 15:3};
+function buildGrid(p) {
+  const g = Array.from({ length: SH }, () => Array(SW).fill(null));
+  const put = (x, y, v) => { if (x >= 0 && x < SW && y >= 0 && y < SH) g[y][x] = v; };
+  const row = (y, x0, x1, v) => { for (let x = x0; x <= x1; x++) put(x, y, v); };
+  const both = (y, x0, x1, v) => { row(y, x0, x1, v); row(y, 23 - x1, 23 - x0, v); };
+  const hair = Array.from({ length: SH }, () => Array(SW).fill(false));
+  const hRow = (y, x0, x1) => { for (let x = x0; x <= x1; x++) if (y >= 0 && x >= 0 && x < SW) hair[y][x] = true; };
+  const hBoth = (y, x0, x1) => { hRow(y, x0, x1); hRow(y, 23 - x1, 23 - x0); };
+  const long = ['middle', 'side', 'sideR', 'tucked', 'bob'].includes(p.style);
+  const wave = y => (p.wavy ? ((y >> 1) & 1) : 0) + (p.volume ? 1 : 0);
+  const sx = p.male ? 1 : 0;   // broader shoulders for the guys
+
+  // 1. hair behind the body
+  if (long) for (let y = 8; y <= p.len; y++) row(y, 4 - wave(y), 19 + wave(y), 'h');
+
+  // 2. body
+  const sleeve = p.jacket ? 'C' : 'T', sleeveD = p.jacket ? 'c' : 't';
+  row(16, 10, 13, 's'); row(17, 10, 13, 'S');
+  row(18, 6 - sx, 17 + sx, 'T');
+  for (let y = 19; y <= 27; y++) row(y, 5 - sx, 18 + sx, 'T');
+  if (p.jacket) {
+    row(18, 6, 17, 'C');
+    for (let y = 19; y <= 27; y++) { row(y, 5, 18, 'C'); row(y, 10, 13, 'T'); }
+    for (let y = 18; y <= 21; y++) { put(9, y, 'c'); put(14, y, 'c'); }
+    row(27, 5, 9, 'c'); row(27, 14, 18, 'c');
+  } else { for (let y = 19; y <= 27; y++) { put(5 - sx, y, 't'); put(18 + sx, y, 't'); } }
+  if (p.collar) { put(9, 18, 't'); put(10, 19, 't'); put(14, 18, 't'); put(13, 19, 't'); for (let y = 21; y <= 26; y += 2) put(12, y, 't'); }
+  if (p.turtle) { row(16, 10, 13, 't'); row(17, 10, 13, 'T'); row(18, 10, 13, 'T'); }
+  else if (p.vneck) { row(18, 10, 13, 'S'); row(19, 11, 12, 'S'); }
+  else { row(18, 10, 13, 'S'); }
+  if (p.zip) for (let y = 16; y <= 21; y++) put(12, y, 'z');
+  for (let y = 19; y <= 27; y++) { both(y, 3 - sx, 4 - sx, sleeve); put(4 - sx, y, sleeveD); put(19 + sx, y, sleeveD); }
+  if (p.crossed) {
+    row(23, 4 - sx, 19 + sx, sleeveD); row(24, 4 - sx, 19 + sx, sleeve); row(25, 4 - sx, 19 + sx, sleeve);
+    put(17, 23, 'S'); put(18, 23, 'S'); put(5, 25, 'S'); put(6, 25, 'S');
+  } else {
+    both(28, 3 - sx, 4 - sx, 'S');
+  }
+  if (p.watch) { put(19, 27, 'V'); put(20, 27, 'V'); }
+  for (let y = 28; y <= 29; y++) row(y, 7, 16, 'P');
+  for (let y = 30; y <= 32; y++) both(y, 7, 10, 'P');
+  both(33, 6, 10, 'K');
+
+  // 3. head
+  row(3, 8, 15, 'S'); row(4, 7, 16, 'S');
+  for (const y in FACE_W) { const w = FACE_W[y]; row(+y, 12 - w, 11 + w, 'S'); }
+  for (let y = 10; y <= 12; y++) { put(5, y, 's'); put(18, y, 's'); }
+
+  // 4. face
+  if (p.brows) { row(8, 7, 9, 'h'); row(8, 14, 16, 'h'); } else { row(8, 8, 9, 'h'); row(8, 14, 15, 'h'); }
+  put(8, 10, 'E'); put(9, 10, 'w'); put(8, 11, 'E'); put(9, 11, 'E');
+  put(14, 10, 'E'); put(15, 10, 'w'); put(14, 11, 'E'); put(15, 11, 'E');
+  put(12, 12, 's');
+  if (!p.male) { put(7, 10, 'E'); put(16, 10, 'E'); put(7, 12, 'B'); put(16, 12, 'B'); }
+  if (p.beard) {
+    put(7, 12, 'b'); put(16, 12, 'b');
+    row(13, 7, 8, 'b'); row(13, 15, 16, 'b'); row(13, 10, 13, 'b');
+    row(14, 8, 15, 'b'); row(15, 9, 14, 'b');
+  }
+  const mouth = p.mouth || 'smile';
+  if (mouth === 'smile') { put(10, 13, 'M'); put(13, 13, 'M'); put(11, 14, 'M'); put(12, 14, 'M'); }
+  if (mouth === 'grin') { row(13, 10, 13, 'M'); put(11, 13, 'w'); put(12, 13, 'w'); put(9, 12, 'M'); put(14, 12, 'M'); row(14, 11, 12, 'M'); }
+  if (mouth === 'soft') { put(10, 13, 'm'); put(13, 13, 'm'); row(14, 11, 12, 'M'); }
+  if (mouth === 'smirk') { put(14, 12, 'M'); put(13, 13, 'M'); row(14, 10, 12, 'M'); }
+
+  // 5. hair in front
+  hRow(2, 8, 15); hRow(3, 6, 17); for (let y = 4; y <= 6; y++) hRow(y, 5, 18);
+  if (p.style === 'short') {
+    hBoth(7, 5, 7); hBoth(8, 5, 6); hBoth(9, 5, 6);
+  } else if (p.style === 'swept') {
+    hRow(0, 9, 14); hRow(1, 7, 16); hRow(2, 6, 17); hBoth(7, 5, 7); for (let y = 8; y <= 11; y++) hBoth(y, 5, 5);
+  } else {
+    if (p.style === 'side') { hRow(7, 5, 14); hRow(7, 17, 18); hRow(8, 5, 9); hRow(8, 17, 18); }
+    else if (p.style === 'sideR') { hRow(7, 5, 6); hRow(7, 9, 18); hRow(8, 5, 6); hRow(8, 14, 18); }
+    else if (p.style === 'tucked') { hBoth(7, 5, 9); hBoth(8, 5, 7); }
+    else { hBoth(7, 5, 10); hBoth(8, 5, 8); }
+    hBoth(9, 5, 7);
+    for (let y = 10; y <= 15; y++) { hRow(y, 4 - wave(y), 6); hRow(y, 17, 19 + wave(y)); }
+    if (p.style === 'tucked') { hBoth(16, 5, 6); }
+    else if (p.style === 'bob') { hBoth(16, 3, 7); hBoth(17, 3, 6); }
+    else for (let y = 16; y <= p.len; y++) {
+      const end = y >= p.len - 1;
+      hRow(y, (end ? 5 : 4) - wave(y), 7); hRow(y, 16, (end ? 18 : 19) + wave(y));
+    }
+  }
+  const isH = (x, y) => y >= 0 && y < SH && x >= 0 && x < SW && hair[y][x];
+  for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) {
+    if (!hair[y][x]) continue;
+    const edge = !isH(x - 1, y) || !isH(x + 1, y) || !isH(x, y - 1);
+    g[y][x] = edge ? 'h' : (p.ombre && y >= 20 ? 'Y' : 'H');
+  }
+  [[9, 3], [10, 3], [8, 4], [9, 4], [15, 4]].forEach(([x, y]) => { if (hair[y][x]) g[y][x] = 'L'; });
+  if (long) for (let y = 11; y <= p.len - 2; y += 3) { if (hair[y][5]) g[y][5] = 'L'; if (hair[y][17]) g[y][17] = 'L'; }
+
+  // 6. accessories
+  if (p.necklace) { put(10, 18, 'G'); put(13, 18, 'G'); put(11, 19, 'G'); put(12, 19, 'G'); }
+  if (p.earrings) { put(5, 13, 'G'); put(18, 13, 'G'); }
+
+  // 7. outline
+  const filled = (x, y) => y >= 0 && y < SH && x >= 0 && x < SW && g[y][x] && g[y][x] !== 'O';
+  for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++)
+    if (!g[y][x] && (filled(x - 1, y) || filled(x + 1, y) || filled(x, y - 1) || filled(x, y + 1))) g[y][x] = 'O';
+  return g;
+}
+function palette(p) {
+  const [S, s] = p.skin || ['#f6d3bb', '#e2ab8e'];
+  return {
+    S, s, E:'#2b1a14', w:'#ffffff', B:'#f4a0a0', m:'#d77a7a', Y:p.ombre,
+    M: p.male ? '#a85a50' : '#c4505a',
+    H:p.hair[0], h:p.hair[1], L:p.hair[2],
+    T:p.top[0], t:p.top[1], C:(p.jacket || p.top)[0], c:(p.jacket || p.top)[1],
+    P:p.pants || '#26252e', K:'#15111c', G:'#f2c230', V:'#cfd3da', z:'#55575e',
+    b:p.beard || S, O:'#241a33',
+  };
+}
+const spriteCache = {};
+function sprite(id, scale) {
+  const key = id + scale;
+  if (spriteCache[key]) return spriteCache[key];
+  const p = P(id), g = buildGrid(p), pal = palette(p);
+  const c = document.createElement('canvas');
+  c.width = SW * scale; c.height = SH * scale;
+  const x = c.getContext('2d');
+  g.forEach((row, j) => row.forEach((ch, i) => {
+    if (ch && pal[ch]) { x.fillStyle = pal[ch]; x.fillRect(i * scale, j * scale, scale, scale); }
+  }));
+  return spriteCache[key] = c;
+}
+const drawSprite = (ctx, s, x, y) => ctx.drawImage(s, x, y);
+const urlCache = {};
+const avatar = (id, s = 4) => urlCache[id + s] || (urlCache[id + s] = sprite(id, s).toDataURL());
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const rand = (a, b) => a + Math.random() * (b - a);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+let RAF = 0;
+function loop(fn) {
+  cancelAnimationFrame(RAF);
+  let last = performance.now();
+  const f = now => { const dt = Math.min(.04, (now - last) / 1000); last = now; if (fn(dt, now) !== false) RAF = requestAnimationFrame(f); };
+  RAF = requestAnimationFrame(f);
+}
+const stopLoop = () => cancelAnimationFrame(RAF);
+function show(id) {
+  stopLoop(); window.onkeydown = null;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $('#' + id).classList.add('on');
+  $('#app').scrollTop = 0;
+  fit();
+}
+function fit() {
+  const avail = $('#app').clientWidth - 38;
+  const w = Math.max(220, Math.min(avail, (innerHeight - 150) * 2 / 3, 380));
+  document.querySelectorAll('.stage').forEach(s => { s.style.width = w + 'px'; s.style.height = w * 1.5 + 'px'; });
+}
+addEventListener('resize', fit);
+function setupCanvas(c) {
+  const d = 2; c.width = 320 * d; c.height = 480 * d;
+  const ctx = c.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); ctx.imageSmoothingEnabled = false;
+  return ctx;
+}
+const cpos = (c, e) => { const r = c.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * 320, y: (e.clientY - r.top) / r.height * 480 }; };
+function overlay(stage, html, btn, cb) {
+  const o = document.createElement('div'); o.className = 'overlay';
+  o.innerHTML = html + (btn ? `<button class="btn">${btn}</button>` : '');
+  stage.appendChild(o);
+  if (btn) o.querySelector('button').onclick = () => { o.remove(); cb && cb(); };
+  return o;
+}
+function teamRow(el, ids, scale = 2, names = true) {
+  el.innerHTML = ids.map(id => `<figure><img class="pixel" src="${avatar(id, scale)}" alt="${P(id).name}">${names ? `<figcaption>${P(id).name}</figcaption>` : ''}</figure>`).join('');
+}
+const CREW = TEAM.slice(1).map(p => p.id);
+
+/* ---------- confetti / hearts ---------- */
+const fx = $('#fx'), fxc = fx.getContext('2d');
+let parts = [], fxOn = false;
+function confetti(n = 120) {
+  fx.width = innerWidth; fx.height = innerHeight;
+  const cols = ['#ff5c8a', '#ffd23f', '#3ee6b0', '#ff8a3d', '#8ab4ff', '#fff'];
+  for (let i = 0; i < n; i++) parts.push({ x: rand(0, fx.width), y: rand(-fx.height * .5, -10), vx: rand(-40, 40), vy: rand(80, 220), s: rand(4, 8), c: pick(cols), r: rand(0, 6), vr: rand(-6, 6) });
+  if (!fxOn) { fxOn = true; let last = performance.now(); const f = now => {
+    const dt = Math.min(.04, (now - last) / 1000); last = now;
+    fxc.clearRect(0, 0, fx.width, fx.height);
+    parts.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt; fxc.save(); fxc.translate(p.x, p.y); fxc.rotate(p.r); fxc.fillStyle = p.c; fxc.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); fxc.restore(); });
+    parts = parts.filter(p => p.y < fx.height + 20);
+    if (parts.length) requestAnimationFrame(f); else { fxOn = false; fxc.clearRect(0, 0, fx.width, fx.height); }
+  }; requestAnimationFrame(f); }
+}
+function heartRain(n = 24) {
+  for (let i = 0; i < n; i++) setTimeout(() => {
+    const h = document.createElement('div'); h.className = 'floatheart';
+    h.textContent = pick(['❤️', '💖', '💕', '💙', '✨']);
+    h.style.left = rand(0, 95) + 'vw'; h.style.animationDuration = rand(4, 7) + 's'; h.style.fontSize = rand(16, 30) + 'px';
+    document.body.appendChild(h); setTimeout(() => h.remove(), 7500);
+  }, i * 180);
+}
+
+/* ---------- levels data ---------- */
+const LEVELS = [
+  { name: 'KAFIĆ', screen: 'g1', start: () => startCafe(),
+    panels: [
+      { cap: 'Prvi timbilding. Ekipa stiže u kafić...', who: ['luka', 'ema', 'pera', 'nata'], say: 'Kafa! Limunada! Meni kola! A ja... još ne znam 🤔' },
+      { cap: 'Ali Mina, kao i uvek, ima plan.', who: ['mina'], say: 'Opušteno, ekipa. Ja organizujem! ☕' } ],
+    goal: 'Pomeraj Minu prstom (ili strelicama) i uhvati 12 pića za tim. Pazi na RAČUN 🧾, on ti uzima život!',
+    clear: 'Tim je napojen i spreman za akciju!', photo: 'img/dixit.webp', caption: 'Prvi sastanak, gde je sve počelo ✨' },
+  { name: 'DRUŠTVENE IGRE', screen: 'g2', start: () => startMemory(),
+    panels: [
+      { cap: 'Kafe su popijene. Na sto stiže kutija...', who: ['mina'], say: 'Ko je za društvene igre? 🃏' },
+      { cap: 'Ali prvo, da se zna ko je u timu.', who: ['andrijana', 'lara', 'ana', 'tea'], say: 'Upari nas, predsednice! 😄' } ],
+    goal: 'Okreći karte i upari svih 8 članova tima.',
+    clear: 'Pamćenje 100%. Tim na okupu!', photo: 'img/basta.webp', caption: 'Leto, bašta i ceo tim na okupu ☀️' },
+  { name: 'KUGLANJE', boss: true, screen: 'g3', start: () => startBowling(),
+    panels: [
+      { cap: 'Finalni izazov. Kuglana. Deset čunjeva.', who: CREW, say: 'MI-NA! MI-NA! MI-NA! 📣' },
+      { cap: 'Sve se svodi na jedno bacanje.', who: ['mina'], say: 'Treba mi samo jedan STRIKE. 🎳' } ],
+    goal: 'Tapni jednom da zaustaviš strelicu (pravac), pa još jednom za jačinu. Samo STRIKE prelazi igru!',
+    clear: 'STRIKE! Boss je pobeđen!', photo: 'img/kuglanje.webp', caption: 'Kuglanje, strike za strike-om 🎳' },
+];
+
+function story(i) {
+  const L = LEVELS[i], el = $('#story');
+  el.innerHTML = `
+    <div class="lvl-tag ${L.boss ? 'boss' : ''}">NIVO ${i + 1}/3${L.boss ? ' · BOSS' : ''}</div>
+    <h2>${L.name}</h2>
+    ${L.panels.map(p => `
+      <div class="panel"><div class="cap">${p.cap}</div>
+        <div class="scene"><div class="who ${p.who.length > 2 ? 'many' : ''}">${p.who.map(id => `<img class="pixel" src="${avatar(id, 4)}" alt="${P(id).name}">`).join('')}</div>
+        <div class="bubble">${p.say}</div></div></div>`).join('')}
+    <div class="goal">🎯 ${L.goal}</div>
+    <button class="btn" id="goBtn">KRENI ▶</button>`;
+  show('story');
+  el.querySelectorAll('.panel').forEach((p, k) => setTimeout(() => { p.classList.add('in'); beep(520 + k * 140, .06); }, 250 + k * 600));
+  $('#goBtn').onclick = () => { beep(880); show(L.screen); L.start(); };
+}
+
+function levelClear(i) {
+  stopLoop();
+  const L = LEVELS[i], el = $('#clear');
+  el.innerHTML = `
+    <div class="stars">★ ★ ★</div>
+    <h2>NIVO ${i + 1} PREĐEN!</h2>
+    <div style="font-size:22px">${L.clear}</div>
+    <div class="sub">📸 NOVA USPOMENA OTKLJUČANA</div>
+    <div class="polaroid"><img src="${L.photo}" alt=""><p>${L.caption}</p></div>
+    <button class="btn" id="nextBtn">${i < 2 ? 'SLEDEĆI NIVO ▶' : 'KRAJ IGRE ▶'}</button>`;
+  show('clear');
+  jingle(FANFARE); confetti(90);
+  setTimeout(() => el.querySelector('.polaroid').classList.add('dev'), 400);
+  $('#nextBtn').onclick = () => { beep(880); i < 2 ? story(i + 1) : finale(); };
+}
+
+/* ---------- LEVEL 1: cafe catch ---------- */
+function startCafe() {
+  const c = $('#cv1'), ctx = setupCanvas(c), stage = $('#st1');
+  stage.querySelectorAll('.overlay').forEach(o => o.remove());
+  const GOAL = 12, GOOD = ['☕', '🥤', '🧋', '🍋', '🧃', '🍹'];
+  const mina = sprite('mina', 3);
+  let x = 160, tx = 160, keyV = 0, items = [], pops = [], caught = 0, lives = 3, spawn = .6, hurt = 0, done = false;
+  const score = () => $('#g1score').textContent = `☕${caught}/${GOAL} ${'❤'.repeat(lives)}${'♡'.repeat(3 - lives)}`;
+  score();
+  c.onpointerdown = c.onpointermove = e => { tx = cpos(c, e).x; };
+  window.onkeydown = e => { if (e.key === 'ArrowLeft') keyV = -280; if (e.key === 'ArrowRight') keyV = 280; };
+  window.onkeyup = e => { if (e.key.startsWith('Arrow')) keyV = 0; };
+
+  function draw(t) {
+    // wall + window + floor
+    ctx.fillStyle = '#f0a77f'; ctx.fillRect(0, 0, 320, 480);
+    ctx.fillStyle = '#e4956c'; ctx.fillRect(0, 0, 320, 40);
+    ctx.fillStyle = '#7a4a2a'; ctx.fillRect(110, 70, 100, 120);
+    ctx.fillStyle = '#9fd3ff'; ctx.fillRect(116, 76, 88, 108);
+    ctx.fillStyle = '#c9e7ff'; ctx.fillRect(130, 90, 20, 60);
+    ctx.fillStyle = '#7a4a2a'; ctx.fillRect(158, 76, 4, 108);
+    ctx.fillStyle = '#5d8a4a'; ctx.fillRect(30, 150, 30, 40); ctx.fillStyle = '#3f6a33'; ctx.beginPath(); ctx.arc(45, 140, 22, 0, 7); ctx.fill();
+    ctx.fillStyle = '#c98a55'; ctx.fillRect(0, 440, 320, 40);
+    ctx.fillStyle = '#b8794a'; for (let i = 0; i < 320; i += 40) ctx.fillRect(i, 440, 2, 40);
+    // items
+    ctx.font = '26px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    items.forEach(it => ctx.fillText(it.e, it.x, it.y));
+    // mina + tray
+    const blinkHide = hurt > 0 && Math.floor(t / 80) % 2;
+    if (!blinkHide) {
+      drawSprite(ctx, mina, Math.round(x - 36), 372);
+      ctx.fillStyle = '#6b3d1f'; ctx.fillRect(x - 36, 362, 72, 6);
+      ctx.fillStyle = '#8a5530'; ctx.fillRect(x - 36, 362, 72, 2);
+      ctx.fillStyle = '#f7d2b8'; ctx.fillRect(x - 32, 368, 5, 10); ctx.fillRect(x + 27, 368, 5, 10);
+    }
+    // popups
+    ctx.font = '16px "Press Start 2P"';
+    pops.forEach(p => { ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = p.col; ctx.fillText(p.txt, p.x, p.y); });
+    ctx.globalAlpha = 1;
+  }
+
+  loop((dt, now) => {
+    if (keyV) tx = Math.max(36, Math.min(284, x + keyV * .12));
+    x += (Math.max(36, Math.min(284, tx)) - x) * Math.min(1, dt * 14);
+    hurt = Math.max(0, hurt - dt);
+    spawn -= dt;
+    if (spawn <= 0) {
+      spawn = Math.max(.38, .75 - caught * .03);
+      const bad = Math.random() < .2;
+      items.push({ x: rand(20, 300), y: -20, v: rand(110, 160) + caught * 7, e: bad ? '🧾' : pick(GOOD), bad });
+    }
+    items.forEach(it => {
+      it.y += it.v * dt;
+      if (!it.hit && it.y > 346 && it.y < 374 && Math.abs(it.x - x) < 40) {
+        it.hit = true;
+        if (it.bad) { lives--; hurt = .8; beep(140, .25, 'sawtooth'); pops.push({ x: it.x, y: it.y, txt: 'RAČUN!', col: '#b8325b', life: 1 }); }
+        else { caught++; beep(700 + caught * 30, .07); pops.push({ x: it.x, y: it.y - 10, txt: '+1', col: '#1b1430', life: 1 }); }
+        score();
+      }
+    });
+    items = items.filter(it => !it.hit && it.y < 500);
+    pops.forEach(p => { p.y -= 40 * dt; p.life -= dt * 1.4; });
+    pops = pops.filter(p => p.life > 0);
+    draw(now);
+    if (!done && caught >= GOAL) { done = true; setTimeout(() => levelClear(0), 500); return false; }
+    if (!done && lives <= 0) {
+      done = true;
+      overlay(stage, `<h2>RAČUN JE STIGAO! 🧾</h2><div>Ništa strašno, ovaj put časti tim 😄</div>`, 'PROBAJ OPET', startCafe);
+      return false;
+    }
+  });
+}
+
+/* ---------- LEVEL 2: memory ---------- */
+function startMemory() {
+  const grid = $('#mgrid'); grid.innerHTML = '';
+  const deck = shuffle([...CREW, ...CREW]);
+  let open = [], lock = false, found = 0, moves = 0;
+  const upd = () => $('#g2score').textContent = `PAROVI ${found}/8`;
+  upd();
+  deck.forEach(id => {
+    const b = document.createElement('button');
+    b.className = 'mcard'; b.dataset.id = id;
+    b.innerHTML = `<div class="in"><div class="f">?</div><div class="b"><img class="pixel" src="${avatar(id, 4)}" alt=""><span>${P(id).name}</span></div></div>`;
+    b.onclick = () => {
+      if (lock || b.classList.contains('up')) return;
+      b.classList.add('up'); beep(600, .05); open.push(b);
+      if (open.length < 2) return;
+      moves++; lock = true;
+      const [a, c] = open;
+      if (a.dataset.id === c.dataset.id) {
+        setTimeout(() => {
+          a.classList.add('ok'); c.classList.add('ok'); open = []; lock = false; found++; upd();
+          jingle([660, 880]);
+          if (found === 8) setTimeout(() => levelClear(1), 700);
+        }, 380);
+      } else {
+        setTimeout(() => { a.classList.remove('up'); c.classList.remove('up'); open = []; lock = false; beep(200, .08); }, 850);
+      }
+    };
+    grid.appendChild(b);
+  });
+}
+
+/* ---------- LEVEL 3: bowling ---------- */
+function startBowling() {
+  const c = $('#cv3'), ctx = setupCanvas(c), stage = $('#st3');
+  stage.querySelectorAll('.overlay').forEach(o => o.remove());
+  const CX = 160, START_Y = 396, HEAD_Y = 130;
+  const PIN_LAYOUT = [[160, 130], [151, 114], [169, 114], [142, 98], [160, 98], [178, 98], [133, 82], [151, 82], [169, 82], [187, 82]];
+  const mina = sprite('mina', 2);
+  const crew = CREW.map(id => sprite(id, 2));
+  const crewPos = [[20, 100], [20, 170], [20, 240], [20, 310], [252, 100], [252, 170], [252, 240], [252, 310]];
+  let attempts = 0, phase, t0, angle, power, ball, pins, cheer = 0, resultAt = 0, strike = false, gutter = false;
+  const hint = $('#g3hint');
+  const score = () => $('#g3score').textContent = `BACANJE ${attempts + 1}`;
+
+  function reset() {
+    phase = 'aim'; t0 = performance.now(); angle = 0; power = 0; gutter = false; strike = false;
+    ball = { x: CX, y: START_Y, vx: 0, vy: 0 };
+    pins = PIN_LAYOUT.map(([x, y]) => ({ x, y, down: false, vx: 0, vy: 0, r: 0, a: 1 }));
+    hint.textContent = '👆 Tapni da zaključaš PRAVAC';
+    score();
+  }
+  function tap() {
+    if (phase === 'aim') { phase = 'power'; t0 = performance.now(); beep(700); hint.textContent = '👆 Tapni da izabereš JAČINU (zelena zona!)'; }
+    else if (phase === 'power') { throwBall(); }
+  }
+  c.onpointerdown = tap;
+  window.onkeydown = e => { if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); tap(); } };
+
+  function throwBall() {
+    phase = 'roll'; beep(300, .2, 'triangle');
+    hint.textContent = '🎳 ...';
+    const tol = attempts >= 4 ? 999 : 14 + attempts * 6;
+    const pmin = attempts >= 2 ? 0 : .55;
+    const pathX = CX + Math.tan(angle) * (START_Y - HEAD_Y);
+    strike = Math.abs(pathX - CX) < tol && power >= pmin;
+    if (strike && attempts >= 4) angle = angle * .1;   // help a little after many tries
+    const sp = 260 + power * 260;
+    ball.vx = Math.sin(angle) * sp; ball.vy = -Math.cos(angle) * sp;
+  }
+
+  function knock(p, from, wait = 0) {
+    p.down = true; p.wait = wait; p.vx = (p.x - from) * rand(3, 6) + rand(-40, 40); p.vy = rand(-160, -60); p.vr = rand(-12, 12);
+  }
+  function resolve() {
+    if (gutter) return;
+    if (strike) { pins.forEach((p, k) => knock(p, ball.x, k * .035)); jingle([180, 260, 340, 420], 35); return; }
+    const slope = ball.vx / ball.vy;
+    pins.forEach(p => { const px = ball.x + (p.y - ball.y) * slope; if (Math.abs(p.x - px) < 13 + power * 5) knock(p, ball.x); });
+    for (let pass = 0; pass < 2; pass++)
+      pins.filter(p => !p.down).forEach(p => {
+        if (pins.some(q => q.down && Math.hypot(q.x - p.x, q.y - p.y) < 22) && Math.random() < .45) knock(p, ball.x);
+      });
+    if (pins.every(p => p.down)) { const s = pins[6 + Math.floor(Math.random() * 4)]; s.down = false; s.vx = s.vy = 0; }
+    beep(160, .15, 'triangle');
+  }
+
+  function draw(now) {
+    ctx.fillStyle = '#21183b'; ctx.fillRect(0, 0, 320, 480);
+    // neon sign
+    ctx.font = '10px "Press Start 2P"'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ff5c8a'; ctx.fillText('★ STAZA 7 ★', CX, 20);
+    // gutters + lane
+    ctx.fillStyle = '#4a4f66'; ctx.fillRect(88, 40, 144, 440);
+    ctx.fillStyle = '#dca866'; ctx.fillRect(100, 40, 120, 440);
+    ctx.fillStyle = '#c99353'; for (let x = 100; x < 220; x += 10) ctx.fillRect(x, 40, 1, 440);
+    ctx.fillStyle = '#ff5c8a'; ctx.fillRect(100, 380, 120, 2);
+    ctx.fillStyle = '#8a4b2a';
+    for (let k = 0; k < 7; k++) { const ax = 115 + k * 15; ctx.beginPath(); ctx.moveTo(ax, 290); ctx.lineTo(ax - 4, 300); ctx.lineTo(ax + 4, 300); ctx.fill(); }
+    ctx.fillStyle = '#120d22'; ctx.fillRect(88, 40, 144, 22);
+    // pins
+    pins.forEach(p => {
+      if (p.a <= 0) return;
+      ctx.save(); ctx.globalAlpha = p.a; ctx.translate(p.x, p.y); ctx.rotate(p.r);
+      if (p.down && !(p.wait > 0)) { ctx.fillStyle = '#fff'; ctx.fillRect(-3, -8, 6, 16); ctx.fillStyle = '#e23b4e'; ctx.fillRect(-3, -4, 6, 2); }
+      else { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, 6, 0, 7); ctx.fill(); ctx.strokeStyle = '#e23b4e'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, 3.5, 0, 7); ctx.stroke(); }
+      ctx.restore();
+    });
+    // aim arrow
+    if (phase === 'aim' || phase === 'power') {
+      ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = 3; ctx.setLineDash([6, 5]);
+      ctx.beginPath(); ctx.moveTo(ball.x, ball.y); ctx.lineTo(ball.x + Math.sin(angle) * 110, ball.y - Math.cos(angle) * 110); ctx.stroke(); ctx.setLineDash([]);
+      const hx = ball.x + Math.sin(angle) * 118, hy = ball.y - Math.cos(angle) * 118;
+      ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(hx, hy, 5, 0, 7); ctx.fill();
+    }
+    // ball
+    if (ball.y > -20) {
+      ctx.fillStyle = '#ff5c8a'; ctx.beginPath(); ctx.arc(ball.x, ball.y, 9, 0, 7); ctx.fill();
+      ctx.fillStyle = '#ffffff55'; ctx.beginPath(); ctx.arc(ball.x - 3, ball.y - 3, 3, 0, 7); ctx.fill();
+      ctx.fillStyle = '#5a1430'; [[2, -2], [5, 1], [2, 3]].forEach(([dx, dy]) => { ctx.beginPath(); ctx.arc(ball.x + dx, ball.y + dy, 1.3, 0, 7); ctx.fill(); });
+    }
+    // crowd
+    crew.forEach((s, k) => {
+      const [cx, cy] = crewPos[k];
+      const j = Math.abs(Math.sin(now / (cheer ? 90 : 300) + k)) * (cheer ? 10 : 3);
+      drawSprite(ctx, s, cx, cy - j);
+    });
+    ctx.font = '9px "Press Start 2P"'; ctx.fillStyle = '#ffd23f';
+    ctx.fillText(cheer ? 'BRAVO!!' : 'MI-NA!', 44, 88); ctx.fillText(cheer ? 'STRIKE!!' : 'MI-NA!', 276, 88);
+    // mina
+    drawSprite(ctx, mina, CX - 24, 410);
+    // power bar
+    if (phase === 'power' || phase === 'roll') {
+      ctx.fillStyle = '#000'; ctx.fillRect(250, 394, 22, 80);
+      ctx.fillStyle = '#3ee6b055'; ctx.fillRect(253, 397, 16, 74 * .45);
+      const h = 74 * power; ctx.fillStyle = power >= .55 ? '#3ee6b0' : '#ff8a3d'; ctx.fillRect(253, 471 - h, 16, h);
+      ctx.fillStyle = '#fff'; ctx.font = '8px "Press Start 2P"'; ctx.fillText('JAČINA', 261, 388);
+    }
+    if (cheer) {
+      ctx.font = '26px "Press Start 2P"'; ctx.fillStyle = '#000'; ctx.fillText('STRIKE!', CX + 3, 233);
+      ctx.fillStyle = '#ffd23f'; ctx.fillText('STRIKE!', CX, 230);
+    }
+  }
+
+  reset();
+  loop((dt, now) => {
+    const t = (now - t0) / 1000;
+    if (phase === 'aim') angle = .3 * Math.sin(t * 2.3);
+    if (phase === 'power') power = (1 - Math.cos(t * 3.4)) / 2;
+    if (phase === 'roll') {
+      ball.x += ball.vx * dt; ball.y += ball.vy * dt;
+      if (!gutter && !strike && Math.abs(ball.x - CX) > 56 && ball.y > HEAD_Y) {
+        gutter = true; ball.x = CX + Math.sign(ball.x - CX) * 66; ball.vx = 0; beep(110, .3, 'sawtooth');
+      }
+      if (!ball.resolved && ball.y <= HEAD_Y + 6) { ball.resolved = true; resolve(); }
+      if (ball.y < -30) { phase = 'result'; resultAt = now; }
+    }
+    pins.forEach(p => { if (p.wait > 0) { p.wait -= dt; return; } if (p.down) { p.x +=p.vx * dt; p.y += p.vy * dt; p.r += (p.vr || 0) * dt; p.a -= dt * .9; } });
+    if (phase === 'result' && now - resultAt > 700) {
+      phase = 'done';
+      const n = pins.filter(p => p.down).length;
+      if (n === 10) {
+        cheer = 1; jingle(FANFARE, 120); confetti(140); hint.textContent = '🎉 STRIKE!!!';
+        setTimeout(() => levelClear(2), 1900);
+      } else {
+        attempts++;
+        const msg = gutter ? 'Kanal! 😅' : n === 0 ? 'Promašaj! 😅' : `${n} ${n === 1 ? 'čunj' : n < 5 ? 'čunja' : 'čunjeva'}! Skoro!`;
+        const tip = attempts >= 2 ? '<div class="small">Savet: ciljaj pravo u sredinu, jačina u zelenom 😉</div>' : '';
+        overlay(stage, `<h2>${msg}</h2><div>Treba STRIKE da bi se prešlo dalje.</div>${tip}`, 'BACI PONOVO', () => { reset(); });
+      }
+    }
+    draw(now);
+  });
+}
+
+/* ---------- finale ---------- */
+function finale() {
+  show('final');
+  $('#fMina').src = avatar('mina', 8);
+  teamRow($('#finalTeam'), CREW, 2);
+  const shots = [...LEVELS.map(L => [L.photo, L.caption]), ['img/kafic.webp', 'Radni sastanak... uz kafu ☕']];
+  $('#gallery').innerHTML = shots.map(([s, c]) => `<div class="polaroid"><img src="${s}" alt=""><p>${c}</p></div>`).join('');
+  $('#credits').innerHTML = `<b>— ODJAVNA ŠPICA —</b><br>GLAVNA ULOGA: MINA<br>${CREW.map(id => P(id).name.toUpperCase()).join(' · ')}<br>U ULOZI TIMA KOJI TE VOLI 💙<br><br>THANK YOU FOR PLAYING`;
+  jingle([523, 659, 784, 1047, 1319, 1047, 1319, 1568], 140);
+  confetti(200); setTimeout(() => confetti(150), 1200);
+  heartRain(30);
+}
+
+/* ---------- boot ---------- */
+$('#titleMina').src = avatar('mina', 8);
+teamRow($('#titleTeam'), CREW, 2, false);
+$('#pMina').src = avatar('mina', 6);
+teamRow($('#playerTeam'), CREW, 2);
+$('#startBtn').onclick = () => {
+  jingle([523, 784, 1047]);
+  show('player');
+  setTimeout(() => document.querySelectorAll('#player .bar i').forEach(i => i.style.width = i.dataset.w + '%'), 200);
+};
+$('#pickBtn').onclick = () => { beep(880); story(0); };
+$('#againBtn').onclick = () => {
+  document.querySelectorAll('#player .bar i').forEach(i => i.style.width = 0);
+  show('title');
+};
+fit();
+</script>
+</body>
+</html>
